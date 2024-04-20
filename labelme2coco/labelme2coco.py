@@ -15,7 +15,7 @@ class labelme2coco:
 
 
 def get_coco_from_labelme_folder(
-    labelme_folder: str, coco_category_list: List = None, skip_labels: List[str] = []
+    labelme_folder: str, coco_category_list: List = None, skip_labels: List[str] = [], category_id_start: int = 0
 ) -> Coco:
     """
     Args:
@@ -37,19 +37,21 @@ def get_coco_from_labelme_folder(
         print(f"Will skip the following annotated labels: {skip_labels}")
 
     # parse labelme annotations
-    category_ind = 0
+    # depending on cli arguments, will start counting at 1
+    category_ind = category_id_start
     for json_path in tqdm(
         labelme_json_list, "Converting labelme annotations to COCO format"
     ):
+        # Taken from https://github.com/fcakyon/labelme2coco/pull/17
         data = load_json(json_path)
         # get image size
-        image_path = str(Path(labelme_folder) / data["imagePath"])
+        image_path = str(Path(json_path).parent / data["imagePath"])
         # use the image sizes provided by labelme (they already account for
         # things such as EXIF orientation)
         width = data["imageWidth"]
         height = data["imageHeight"]
         # init coco image
-        coco_image = CocoImage(file_name=data["imagePath"], height=height, width=width)
+        coco_image = CocoImage(file_name=image_path, height=height, width=width)
         # iterate over annotations
         for shape in data["shapes"]:
             # set category name and id
