@@ -6,16 +6,23 @@ from sahi.utils.coco import Coco, CocoAnnotation, CocoCategory, CocoImage
 from sahi.utils.file import list_files_recursively, load_json, save_json
 from tqdm import tqdm
 
-
 class labelme2coco:
     def __init__(self):
         raise RuntimeError(
             "Use labelme2coco.convert() or labelme2coco.get_coco_from_labelme_folder() instead."
         )
 
+def import_category_list_from_coco_file(
+    coco_file: str
+):
+    print(f"Importing categories from {coco_file}")
+    coco_source = Coco.from_coco_dict_or_path(coco_file)
+    categories = coco_source.json_categories
+    return categories
+
 
 def get_coco_from_labelme_folder(
-    labelme_folder: str, coco_category_list: List = None, skip_labels: List[str] = [], category_id_start: int = 0
+    labelme_folder: str, coco_category_list: List = None, coco_file: str = None, skip_labels: List[str] = [], category_id_start: int = 1
 ) -> Coco:
     """
     Args:
@@ -30,11 +37,16 @@ def get_coco_from_labelme_folder(
     # init coco object
     coco = Coco()
 
+    if coco_file is not None:
+        coco_category_list = import_category_list_from_coco_file(coco_file)
+
     if coco_category_list is not None:
         coco.add_categories_from_coco_category_list(coco_category_list)
 
     if len(skip_labels) > 0:
         print(f"Will skip the following annotated labels: {skip_labels}")
+
+
 
     # parse labelme annotations
     # depending on cli arguments, will start counting at 1
@@ -54,6 +66,8 @@ def get_coco_from_labelme_folder(
         coco_image = CocoImage(file_name=image_path, height=height, width=width)
         # iterate over annotations
         for shape in data["shapes"]:
+            while category_ind in coco.category_mapping:
+                category_ind += 1 #TODO: we no longer overwrite but this not not efficient
             # set category name and id
             category_name = shape["label"]
             if category_name in skip_labels:
@@ -69,8 +83,11 @@ def get_coco_from_labelme_folder(
             # add category if not present
             if category_id is None:
                 category_id = category_ind
+                print(f"Creating category '{category_name}' with ID {category_id} ")
                 coco.add_category(CocoCategory(id=category_id, name=category_name))
                 category_ind += 1
+               
+               
 
             # convert circles, lines, and points to bbox/segmentation
             if shape["shape_type"] == "circle":
@@ -121,5 +138,6 @@ def get_coco_from_labelme_folder(
 
 
 if __name__ == "__main__":
-    labelme_folder = "tests/data/labelme_annot"
-    coco = get_coco_from_labelme_folder(labelme_folder)
+    labelme_folder = "../../YOLOX/datasets/apartment_real"
+    coco_file = "../../Cygen/datasets/ycb_video_mixed/annotations/instances_train.json"
+    coco = get_coco_from_labelme_folder(labelme_folder, coco_file = coco_file)

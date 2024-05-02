@@ -23,9 +23,10 @@ logging.basicConfig(
 def convert(
     labelme_folder: str,
     export_dir: str = "runs/labelme2coco/",
+    coco_file: str = None,
     train_split_rate: float = 1,
     skip_labels: List[str] = [],
-    category_id_start: int = 0,
+    category_id_start: int = 1,
 ):
     """
     Args:
@@ -34,7 +35,12 @@ def convert(
         train_split_rate: ration fo train split
         category_id_start: starting value for category IDs (default: 0)
     """
-    coco = get_coco_from_labelme_folder(labelme_folder, skip_labels=skip_labels, category_id_start=category_id_start)
+    coco = get_coco_from_labelme_folder(labelme_folder, 
+    coco_category_list = None, 
+    coco_file = coco_file,
+    skip_labels=skip_labels, 
+    category_id_start=category_id_start)
+
     if train_split_rate < 1:
         result = coco.split_coco_as_train_val(train_split_rate)
         # export train split

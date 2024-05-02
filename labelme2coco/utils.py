@@ -56,10 +56,11 @@ coco_schema = {
 }
 
 
-def read_and_validate_coco_annotation(coco_annotation_path: str) -> (dict, bool):
+def read_and_validate_coco_annotation(coco_annotation_path: str):
     """
     Reads coco formatted annotation file and validates its fields.
     """
+    print("running")
     try:
         with open(coco_annotation_path) as json_file:
             coco_dict = json.load(json_file)
